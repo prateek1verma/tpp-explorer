@@ -5,6 +5,8 @@ This Shiny app helps researchers and developers explore diagnostic requirements 
 1. **Presence Detection** — Sample size required to detect gene drive presence at low frequency.
 2. **Carrier Frequency Estimation** — Precision (standard error) in estimating gene drive carrier frequency.
 
+📍 **Live App**: [TPP Explorer on shinyapps.io](https://pverma.shinyapps.io/tpp_explorer/)
+
 ### Features
 - Dynamic sample size vs. sensitivity/specificity plots
 - Pooled sample analysis with customizable pool sizes
@@ -22,5 +24,3 @@ To run locally:
 
 ```r
 shiny::runApp()
-
-📍 **Live App**: [TPP Explorer on shinyapps.io](https://pverma.shinyapps.io/tpp_explorer/)
