@@ -22,3 +22,5 @@ To run locally:
 
 ```r
 shiny::runApp()
+
+📍 **Live App**: [TPP Explorer on shinyapps.io](https://pverma.shinyapps.io/tpp_explorer/)
