@@ -1,6 +1,6 @@
 # TPP Explorer – Gene Drive Diagnostic Tool
 
-This repository hosts the code and data for the *TPP Explorer*, an R Shiny web application designed to support the development and assessment of Target Product Profiles (TPPs) for diagnostics detecting gene drive constructs in mosquito populations.
+This repository hosts the code and data for the *TPP Explorer*, an R Shiny web application designed to support the development and assessment of Target Product Profiles (TPPs) for diagnostics detecting gene drive constructs in mosquito populations, and the codes for the plots used to generate panels in Figure 1 and 2 of the manuscript.
 
 🧪 The app allows users to explore tradeoffs between test sensitivity, specificity, and sample size under different monitoring scenarios, as outlined in the accompanying research manuscript.
 
@@ -8,11 +8,10 @@ This repository hosts the code and data for the *TPP Explorer*, an R Shiny web a
 
 ## 📁 Repository Structure
 
-- `app.R` — Main R Shiny application script.
-- `www/` — Folder containing assets such as logos or styling resources.
+- `Rshinny_tpp_explorer/app.R` — Main R Shiny application script.
+- `Rshinny_tpp_explorer/www/` — Folder containing assets such as logos or styling resources.
 - `Figure1/` — Scripts and plots used to generate panels in Figure 1 of the manuscript.
 - `Figure2/` — Scripts and plots used to generate panels in Figure 2 of the manuscript.
-- `README.md` — This file.
 
 ## 🧰 Features
 
@@ -39,4 +38,5 @@ This project is licensed under the MIT License.
 
 ## 👤 Author
 
-Developed by [Prateek Verma](https://pverma.shinyapps.io/tpp_explorer/).
+Developed by [Prateek Verma](https://sites.google.com/view/prateekverma) and [​John M. Marshall](https://www.marshalllab.com/) .
+
