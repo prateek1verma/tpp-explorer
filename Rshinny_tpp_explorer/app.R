@@ -5,8 +5,7 @@ library(RColorBrewer)
 library(bslib)
 library(shinyjs)
 library(thematic)
-library(plotly)
-
+library(markdown)
 
 ui <- page_fluid(  # replaces fluidPage
   # theme = bs_theme(version = 4, bootswatch = "flatly"),  # default light theme

@@ -1,0 +1,12 @@
+name: tpp_explorer
+title: tpp_explorer
+username: pverma
+account: pverma
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14837569
+bundleId: 10353413
+url: https://pverma.shinyapps.io/tpp_explorer/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
