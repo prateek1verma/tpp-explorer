@@ -23,11 +23,15 @@ Each script generates a standalone figure using base R or ggplot2.
 Figures are based on analytic expressions derived in the manuscript, such as:
 
 ```math
-p_{GD} = 1 - (1 - xs)^n
+x_{m} = 1 - (1 - x)^{m}
 ```
 
 ```math
-p_{FP} = 1 - (1 - f)^n
+p_{GD} = 1 - (1 - x_{m}s_{m})^{n/m}
+```
+
+```math
+p_{FP} = 1 - (1 - f_{m})^{n/m}
 ```
 
 These equations determine the probability of detection and false positives for given sample sizes.
