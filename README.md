@@ -17,7 +17,7 @@ This repository hosts the code and data for the *TPP Explorer*, an R Shiny web a
 
 - Computes minimum sample sizes for gene drive detection under different sensitivities/specificities.
 - Visualizes false positive and false negative rates for both individual and pooled samples.
-- Explores confidence levels in estimating gene drive carrier frequency.
+- Explores the standard error in estimating gene drive carrier frequency.
 
 ## 📖 Background
 
