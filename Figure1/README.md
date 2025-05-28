@@ -24,7 +24,9 @@ Figures are based on analytic expressions derived in the manuscript, such as:
 
 ```math
 p_{GD} = 1 - (1 - xs)^n
+```
 
+```math
 p_{FP} = 1 - (1 - f)^n
 ```
 
