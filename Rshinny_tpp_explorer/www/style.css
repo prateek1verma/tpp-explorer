@@ -1,0 +1,59 @@
+
+body {
+  background-color: #fdfdfd;
+  font-family: "Segoe UI", sans-serif;
+  color: #333;
+}
+
+h2, h3, h4 {
+  color: #2b2b2b;
+}
+
+.navbar, .tabbable > .nav > li > a {
+  background-color: #ffffff;
+  color: #005B96;
+  border: none;
+}
+
+.nav-tabs > li.active > a {
+  background-color: #eaeaea;
+  border-color: transparent;
+  font-weight: bold;
+}
+
+.panel {
+  border: none;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+input, select, .form-control {
+  background-color: #fcfcfc;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.shiny-output-error {
+  color: red;
+}
+
+body.dark-mode {
+  background-color: #121212;
+  color: #f0f0f0;
+}
+
+body.dark-mode .panel, 
+body.dark-mode .form-control,
+body.dark-mode .tab-content {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+body.dark-mode .nav-tabs > li.active > a {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+body.dark-mode .shiny-output-error {
+  color: #ff6b6b;
+}
+
