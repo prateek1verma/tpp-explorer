@@ -18,6 +18,7 @@ This folder contains R scripts used to generate Figure 2 of the gene drive monit
 | `Figure2_Combined.png`  | Exported PNG image of the final combined Figure 2 panels for quick preview or web use.                                                                |
 | `README.md`             | Documentation describing the purpose and structure of the `Figure2` folder.                                                                           |
 
+## 🧠 Methodology
 
 This script computes and visualizes the standard error of a corrected estimator for gene drive carrier frequency:
 ```math
