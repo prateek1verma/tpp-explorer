@@ -27,5 +27,14 @@ where `s` is test sensitivity and `f` is the false positive rate.
 
 ## 📎 Dependencies
 
-- `ggplot2`
-- `dplyr`
+The following MATLAB files and functions are required to generate Figure 2:
+
+- `Fig2_combined.m`: Main script that generates Figure 2A and 2B; depends on the helper functions below.
+- `compute_sens_spec.m`: Computes sensitivity when sensitivity equals specificity for a desired standard error.
+- `compute_sensitivity.m`: Computes required sensitivity given fixed specificity to achieve target precision.
+- `brewermap.m`: Provides ColorBrewer color palettes for consistent and accessible figure styling.
+
+**MATLAB built-ins used**: `fzero`, `meshgrid`, `sqrt`, `imagesc`, `contour`, `plot`, `colorbar`, `exportgraphics`, etc.
+
+No additional MATLAB toolboxes are required beyond the standard distribution.
+
