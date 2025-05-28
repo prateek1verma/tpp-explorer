@@ -11,10 +11,10 @@ This folder contains R scripts used to generate the panels in Figure 1 of the ge
 
 ## 🛠️ Files
 
-- `fig1A_sample_size_vs_sensitivity.R`
-- `fig1B_false_positive_vs_specificity.R`
-- `fig1C_pooled_sensitivity.R`
-- `fig1D_pooled_specificity.R`
+- `Fig1_combine.R` generates data and combines individual panel plots (1A–1D) into a single multi-panel Figure 1 layout for the manuscript.
+- `Fig1_Combined_MultiPanel.pdf` is the generated Figure in PDF format.
+- `Fig1_Combined_MultiPanel.pdng` is the generated Figure in PNG format.
+
 
 Each script generates a standalone figure using base R or ggplot2.
 
@@ -24,6 +24,7 @@ Figures are based on analytic expressions derived in the manuscript, such as:
 
 ```math
 p_{GD} = 1 - (1 - xs)^n
+
 p_{FP} = 1 - (1 - f)^n
 ```
 
