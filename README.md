@@ -26,10 +26,16 @@ The methodology and motivation behind this tool are described in our working man
 
 ## 🚀 Getting Started (Local)
 
-To run the app locally:
+To run the app locally using RStudio:
+1. Open the `app.R` file in RStudio.
+2. Click the **Run App** button in the upper-right corner of the editor window.
+
+Alternatively, you can run the app from the console with the following commands:
+
 ```R
-install.packages("shiny")
-runApp("path/to/tpp-explorer")
+install.packages("shiny")  # Install Shiny if not already installed
+runApp("path/to/tpp-explorer")  # Replace with the actual path to the app directory
+
 ```
 
 ## 📜 License
