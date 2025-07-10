@@ -5,7 +5,7 @@ account: pverma
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14837569
-bundleId: 10562038
+bundleId: 10593059
 url: https://pverma.shinyapps.io/tpp_explorer/
 version: 1
 asMultiple: FALSE

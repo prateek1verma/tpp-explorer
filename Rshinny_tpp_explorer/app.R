@@ -269,12 +269,13 @@ server <- function(input, output, session) {
       est <- estimate_p_and_se(m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
       p_hats <- est["p_hat"]
       se_phat <- est["se"]
+      # sd_phat <- sqrt(n_rep)*se_phat
       
       results_list[[row_idx]] <- data.frame(
         t(setNames(as.list(rbind(m_vec, k_vec)), c(rbind(paste0("m", 1:n), paste0("k", 1:n))))),
         K = K, N = N_total,
         p_hat = p_hats,
-        SE = se_phat
+        SE = sqrt(n_rep)*se_phat
       )
       row_idx <- row_idx + 1
     }
@@ -302,7 +303,7 @@ server <- function(input, output, session) {
       K = input$N,
       N = input$N,
       p_hat = as.numeric(p_hats_ref),
-      SE = as.numeric(se_hat_ref),
+      SE = as.numeric(sqrt(n_rep)*se_hat_ref),
       stringsAsFactors = FALSE
     )
     
