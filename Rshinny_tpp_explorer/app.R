@@ -148,7 +148,7 @@ ui <- page_fluid(  # replaces fluidPage
                       sidebarPanel(
                         h5("Sampling Parameters"),
                         numericInput("y_true", HTML("Estimated Gene Drive Frequency, <i>p&#770;</i>"), value = 0.5,step = 0.01),
-                        numericInput("n", HTML("Pooled Sample Count, <i>n</i>"), value = 100, step = 1),
+                        numericInput("n", HTML("Total Mosquito Samples, <i>n</i>"), value = 100, step = 1),
                         numericInput("m", HTML("Pool Size, <i>m</i>"), value = 1, step = 1),
                         textOutput("pool_count"),  # <-- New line here
                         h5("Plot Settings"),
@@ -177,9 +177,7 @@ ui <- page_fluid(  # replaces fluidPage
                                textInput("sens_vec", HTML("Test Sensitivity, <i>s<sub>i</sub></i> (comma-separated) :"), value = "0.9,0.8,0.7"),
                                textInput("spec_vec", HTML("Test Specificity, <i>c<sub>i</sub></i> (comma-separated) :"), value = "0.9,0.8,0.7"),
                                numericInput("p_true", HTML("True GD Frequency, <i>p</i> :"), value = 0.1, min = 0.001, max = 0.999, step = 0.001),
-                               # numericInput("sensitivity", "Test Sensitivity :", value = 0.95, min = 0.5, max = 1, step = 0.01),
-                               # numericInput("specificity", "Test Specificity :", value = 0.99, min = 0.5, max = 1, step = 0.01),
-                               numericInput("n_rep", HTML("No. of Simulations per Design, <i>n<sub>rep</sub></i> :"), value = 100),
+                               numericInput("n_rep", HTML("No. of Simulations per Design, <i>n<sub>rep</sub></i> :"), value = 500),
                                actionButton("runSim", "Run Simulation"),
                                tags$hr(),
                                div(style = "margin-top: 10px;", 
@@ -231,9 +229,9 @@ server <- function(input, output, session) {
     updateNumericInput(session, "max_tests", value = 10)
     updateTextInput(session, "m_vals", value = "1,5,20")
     updateNumericInput(session, "p_true", value = 0.1)
-    updateNumericInput(session, "sens_vec", value = "1,1,1")
-    updateNumericInput(session, "spec_vec", value = "1,1,1")
-    updateNumericInput(session, "n_rep", value = 50)
+    updateNumericInput(session, "sens_vec", value = "0.9,0.8,0.7")
+    updateNumericInput(session, "spec_vec", value = "0.9,0.8,0.7")
+    updateNumericInput(session, "n_rep", value = 500)
   })
   
   observeEvent(input$runSim, {
@@ -275,7 +273,8 @@ server <- function(input, output, session) {
         t(setNames(as.list(rbind(m_vec, k_vec)), c(rbind(paste0("m", 1:n), paste0("k", 1:n))))),
         K = K, N = N_total,
         p_hat = p_hats,
-        SE = sqrt(n_rep)*se_phat
+        SD = sqrt(n_rep)*se_phat,
+        CI_95 = 1.96*sqrt(n_rep)*se_phat*100
       )
       row_idx <- row_idx + 1
     }
@@ -303,14 +302,14 @@ server <- function(input, output, session) {
       K = input$N,
       N = input$N,
       p_hat = as.numeric(p_hats_ref),
-      SE = as.numeric(sqrt(n_rep)*se_hat_ref),
+      SD = as.numeric(sqrt(n_rep)*se_hat_ref),
+      CI_95 = 1.96*sqrt(n_rep)*se_hat_ref*100,
       stringsAsFactors = FALSE
     )
     
     
     output$results_table <- renderDT({
-      # sorted_results <- results[order(as.numeric(results$SE)), ]
-      results <- results[order(as.numeric(results$SE)), ]
+      results <- results[order(as.numeric(results$SD)), ]
       display <- head(results, 50)
       
       # Define the insertion position
@@ -359,7 +358,7 @@ server <- function(input, output, session) {
       non_ref_indices <- setdiff(seq_len(nrow(display)), ref_row)
       
       # Rank only non-reference rows
-      numeric_se <- as.numeric(display$SE)
+      numeric_se <- as.numeric(display$SD)
       ranks <- rep(NA, length(numeric_se))
       ranks[non_ref_indices] <- rank(numeric_se[non_ref_indices], ties.method = "first")
       
@@ -382,7 +381,8 @@ server <- function(input, output, session) {
       
       # Format numeric columns
       display$p_hat <- formatC(display$p_hat, format = "f", digits = 5)
-      display$SE <- formatC(display$SE, format = "f", digits = 5)
+      display$SD <- formatC(display$SD, format = "f", digits = 5)
+      display$CI_95 <- formatC(display$CI_95, format = "f", digits = 4)
       
       # Highlight only if Rank matches specific values in the row content
       js_callback <- JS("
@@ -586,7 +586,7 @@ server <- function(input, output, session) {
     # Axis and label tightly on the right
     axis_ticks <- pretty(range(z_vals), n = 5)
     axis(4, at = axis_ticks, labels = round(axis_ticks, 2), las = 1, cex.axis = 1.1)
-    mtext("Standard Error (%)", side = 4, line = 3, cex = 1.2)
+    mtext("Standard Deviation (%)", side = 4, line = 3, cex = 1.2)
     
     
   })
