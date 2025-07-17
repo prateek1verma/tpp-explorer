@@ -174,10 +174,10 @@ ui <- page_fluid(  # replaces fluidPage
                                numericInput("N", HTML("Max Mosquito Samples, <i>N</i> :"), value = 100, step = 1),
                                numericInput("max_tests", HTML("Total Pool Count (kits), <i>K</i> :"), value = 10, step = 1),
                                textInput("m_vals", HTML("Candidate Pool Sizes, <i>m<sub>i</sub></i> (comma-separated) :"), value = "1,5,20"),
-                               textInput("sens_vec", HTML("Test Sensitivity, <i>s<sub>i</sub></i> (comma-separated) :"), value = "0.9,0.8,0.7"),
-                               textInput("spec_vec", HTML("Test Specificity, <i>c<sub>i</sub></i> (comma-separated) :"), value = "0.9,0.8,0.7"),
+                               textInput("sens_vec", HTML("Test Sensitivity, <i>s<sub>i</sub></i> (comma-separated) :"), value = "0.9,0.85,0.8"),
+                               textInput("spec_vec", HTML("Test Specificity, <i>c<sub>i</sub></i> (comma-separated) :"), value = "0.98,0.97,0.96"),
                                numericInput("p_true", HTML("True GD Frequency, <i>p</i> :"), value = 0.1, min = 0.001, max = 0.999, step = 0.001),
-                               numericInput("n_rep", HTML("No. of Simulations per Design, <i>n<sub>rep</sub></i> :"), value = 500),
+                               numericInput("n_rep", HTML("No. of Simulations per Design, <i>n<sub>rep</sub></i> :"), value = 5000),
                                actionButton("runSim", "Run Simulation"),
                                tags$hr(),
                                div(style = "margin-top: 10px;", 
@@ -191,6 +191,31 @@ ui <- page_fluid(  # replaces fluidPage
                              ),
                              mainPanel(DTOutput("results_table"))
                            )
+                  ),
+                  tabPanel(
+                    title = tagList(icon("chart-area"), "Prevalence Estimator"),
+                    sidebarLayout(
+                      sidebarPanel(
+                        textInput("pe_m_vec", "Pool Sizes (m vector):", value = "1,5,20"),
+                        textInput("pe_k_vec", "Pool Counts (k vector):", value = "10,5,2"),
+                        textInput("pe_sens_vec", "Sensitivity vector:", value = "0.9,0.85,0.8"),
+                        textInput("pe_spec_vec", "Specificity vector:", value = "0.98,0.97,0.96"),
+                        numericInput("pe_n_rep", "Number of replicates per group (n_rep):", value = 500, min = 1),
+                        sliderInput("pe_range", "Range of True Prevalence (p):", min = 0, max = 1, value = c(0.01, 0.5), step = 0.01),
+                        actionButton("pe_plot", "Generate Plot", icon = icon("chart-line")),
+                        
+                        tags$hr(),
+                        strong("Design Summary:"),
+                        textOutput("pe_total_mosq"),
+                        textOutput("pe_total_tests"),
+                        
+                        tags$hr(),
+                        actionButton("reset5", "Default Parameter", icon = icon("rotate-left"))
+                      ),
+                      mainPanel(
+                        plotOutput("p_hat_plot", height = "500px")
+                      )
+                    )
                   ),
                   tabPanel(
                     title = tagList(icon("book-open"), "Tutorial / Help"),
@@ -229,10 +254,20 @@ server <- function(input, output, session) {
     updateNumericInput(session, "max_tests", value = 10)
     updateTextInput(session, "m_vals", value = "1,5,20")
     updateNumericInput(session, "p_true", value = 0.1)
-    updateNumericInput(session, "sens_vec", value = "0.9,0.8,0.7")
-    updateNumericInput(session, "spec_vec", value = "0.9,0.8,0.7")
-    updateNumericInput(session, "n_rep", value = 500)
+    updateNumericInput(session, "sens_vec", value = "0.9,0.85,0.8")
+    updateNumericInput(session, "spec_vec", value = "0.98,0.97,0.96")
+    updateNumericInput(session, "n_rep", value = 5000)
   })
+  
+  observeEvent(input$reset5, {
+    updateTextInput(session, "pe_m_vec", value = "1,5,20")
+    updateTextInput(session, "pe_k_vec", value = "10,5,2")
+    updateTextInput(session, "pe_sens_vec", value = "0.9,0.85,0.8")
+    updateTextInput(session, "pe_spec_vec", value = "0.98,0.97,0.96")
+    updateNumericInput(session, "pe_n_rep", value = 500)
+    updateSliderInput(session, "pe_range", value = c(0.01, 0.5))
+  })
+  
   
   observeEvent(input$runSim, {
     m_vals <- parse_input(input$m_vals)
@@ -421,7 +456,124 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$pe_reset, {
+    updateTextInput(session, "pe_m_vec", value = "1,5,20")
+    updateTextInput(session, "pe_k_vec", value = "10,5,2")
+    updateTextInput(session, "pe_sens_vec", value = "0.9,0.85,0.8")
+    updateTextInput(session, "pe_spec_vec", value = "0.98,0.97,0.96")
+    updateNumericInput(session, "pe_n_rep", value = 1000)
+    updateSliderInput(session, "pe_range", value = c(0.01, 0.5))
+  })
   
+  
+  output$pe_total_mosq <- renderText({
+    m_vec <- parse_input(input$pe_m_vec)
+    k_vec <- parse_input(input$pe_k_vec)
+    if (length(m_vec) != length(k_vec)) return("Invalid input.")
+    total_mosq <- sum(m_vec * k_vec)
+    paste("Total Mosquitoes Sampled:", total_mosq)
+  })
+  
+  output$pe_total_tests <- renderText({
+    k_vec <- parse_input(input$pe_k_vec)
+    total_tests <- sum(k_vec)
+    paste("Total Tests Used:", total_tests)
+  })
+  
+  # observeEvent(input$pe_plot, {
+  #   m_vec <- parse_input(input$pe_m_vec)
+  #   k_vec <- parse_input(input$pe_k_vec)
+  #   sens_vec <- parse_input(input$pe_sens_vec)
+  #   spec_vec <- parse_input(input$pe_spec_vec)
+  #   n_rep <- input$pe_n_rep
+  #   
+  #   if (any(c(length(m_vec), length(k_vec), length(sens_vec), length(spec_vec)) != length(m_vec))) {
+  #     showNotification("All vectors must be of equal length.", type = "error")
+  #     return(NULL)
+  #   }
+  #   
+  #   p_vals <- seq(input$pe_range[1], input$pe_range[2], length.out = 50)
+  #   
+  #   est_df <- data.frame(p_true = p_vals, p_hat = NA, se = NA)
+  #   
+  #   for (i in seq_along(p_vals)) {
+  #     y_vec_sum <- simulate_y_sum(p_vals[i], m_vec, k_vec, sens_vec, spec_vec, n_rep)
+  #     est <- estimate_p_and_se(m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
+  #     est_df$p_hat[i] <- est["p_hat"]
+  #     est_df$se[i] <- est["se"]
+  #   }
+  #   
+  #   est_df$se <- sqrt(n_rep)*est_df$se
+  #   est_df$lower <- pmax(est_df$p_hat - 1.96 * est_df$se, 0)
+  #   est_df$upper <- pmin(est_df$p_hat + 1.96 * est_df$se, 1)
+  #   
+  #   output$p_hat_plot <- renderPlot({
+  #     ggplot(est_df, aes(x = p_true, y = p_hat)) +
+  #       geom_line(color = "#0072B2", size = 1.2) +
+  #       geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#56B4E9", alpha = 0.3) +
+  #       geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  #       labs(x = "True Prevalence (p)", y = "Estimated Prevalence (p̂)",
+  #            title = "Estimated vs True Prevalence with 95% CI") +
+  #       theme_bw(base_size = 16) +
+  #       coord_cartesian(ylim = c(0, 1)) +
+  #       theme(
+  #         axis.text = element_text(size = 14),
+  #         axis.title = element_text(size = 16)
+  #       )
+  #   })
+  # })
+  # 
+  
+  observeEvent(input$pe_plot, {
+    m_vec <- parse_input(input$pe_m_vec)
+    k_vec <- parse_input(input$pe_k_vec)
+    sens_vec <- parse_input(input$pe_sens_vec)
+    spec_vec <- parse_input(input$pe_spec_vec)
+    n_rep <- input$pe_n_rep
+    
+    if (any(c(length(m_vec), length(k_vec), length(sens_vec), length(spec_vec)) != length(m_vec))) {
+      showNotification("All vectors must be of equal length.", type = "error")
+      return(NULL)
+    }
+    
+    p_vals <- seq(input$pe_range[1], input$pe_range[2], length.out = 50)
+    
+    est_df <- data.frame(p_true = p_vals, p_hat = NA, sd = NA, lower = NA, upper = NA)
+    
+    for (i in seq_along(p_vals)) {
+      p_true <- p_vals[i]
+      
+      # Replicate MLE estimation n_rep times
+      p_hats <- replicate(n_rep, {
+        y_vec <- simulate_y_sum(p_true, m_vec, k_vec, sens_vec, spec_vec, 1)
+        est <- estimate_p_and_se(m_vec, k_vec, y_vec, sens_vec, spec_vec, 1)
+        est["p_hat"]
+      })
+      
+      p_hats <- p_hats[is.finite(p_hats)]  # exclude NA or non-finite estimates
+      if (length(p_hats) > 0) {
+        est_df$p_hat[i] <- mean(p_hats, na.rm = TRUE)
+        est_df$sd[i] <- sd(p_hats, na.rm = TRUE)
+        est_df$lower[i] <- quantile(p_hats, probs = 0.025, na.rm = TRUE)
+        est_df$upper[i] <- quantile(p_hats, probs = 0.975, na.rm = TRUE)
+      }
+    }
+    
+    output$p_hat_plot <- renderPlot({
+      ggplot(est_df, aes(x = p_true, y = p_hat)) +
+        geom_line(color = "#0072B2", size = 1.2) +
+        geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#56B4E9", alpha = 0.3) +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+        labs(x = "True Prevalence (p)", y = "Estimated Prevalence (p̂)",
+             title = "Estimated vs True Prevalence (Empirical CI)") +
+        theme_bw(base_size = 16) +
+        coord_cartesian(ylim = c(0, 1)) +
+        theme(
+          axis.text = element_text(size = 14),
+          axis.title = element_text(size = 16)
+        )
+    })
+  })
   
   thematic::thematic_shiny()
   
@@ -490,6 +642,8 @@ server <- function(input, output, session) {
         legend.title = element_text(size = 14)      # Optional: legend title
       )
   })
+  
+  
   
   output$pool_count <- renderText({
     n <- input$n
