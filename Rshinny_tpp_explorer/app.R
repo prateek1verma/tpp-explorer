@@ -200,9 +200,22 @@ ui <- page_fluid(  # replaces fluidPage
                         textInput("pe_k_vec", "Pool Counts (k vector):", value = "10,5,2"),
                         textInput("pe_sens_vec", "Sensitivity vector:", value = "0.9,0.85,0.8"),
                         textInput("pe_spec_vec", "Specificity vector:", value = "0.98,0.97,0.96"),
-                        numericInput("pe_n_rep", "Number of replicates per group (n_rep):", value = 500, min = 1),
-                        sliderInput("pe_range", "Range of True Prevalence (p):", min = 0, max = 1, value = c(0.01, 0.5), step = 0.01),
-                        actionButton("pe_plot", "Generate Plot", icon = icon("chart-line")),
+                        numericInput("pe_n_rep", "Number of replicates per group (n_rep):", value = 500, min = 1,step = 1),
+                        sliderInput("pe_range", "Range of True Prevalence (p):", min = 0, max = 1, value = c(0.01, 0.99), step = 0.01),
+                        #actionButton("pe_plot", "Generate Plot", icon = icon("chart-line")),
+                        #actionButton("reset_plot", "Reset Plots", icon = icon("undo")),
+                        div(
+                          style = "display: flex; gap: 30px;",
+                          actionButton("pe_plot", "Generate Plot", icon = icon("chart-line")),
+                          actionButton("reset_plot", "Reset Plots", icon = icon("undo"))
+                        ),
+                        h5("Plot Settings"),
+                        # Add these to your UI, perhaps in a sidebarPanel or inputPanel
+                        sliderInput("x_range", "X-axis (True Prevalence) Range:",
+                                    min = 0, max = 1, value = c(0, 1), step = 0.01),
+                        
+                        sliderInput("y_range", "Y-axis (Estimated Prevalence) Range:",
+                                    min = 0, max = 1, value = c(0, 1), step = 0.01),
                         
                         tags$hr(),
                         strong("Design Summary:"),
@@ -213,17 +226,18 @@ ui <- page_fluid(  # replaces fluidPage
                         actionButton("reset5", "Default Parameter", icon = icon("rotate-left"))
                       ),
                       mainPanel(
-                        plotOutput("p_hat_plot", height = "500px")
+                        plotOutput("p_hat_plot", width = "600px", height = "600px")
                       )
                     )
                   ),
                   tabPanel(
                     title = tagList(icon("book-open"), "Tutorial / Help"),
                     includeMarkdown("tutorial.md")
-                  )
+                  ) 
       )
   )
 )
+
 
 server <- function(input, output, session) {
   
@@ -265,7 +279,16 @@ server <- function(input, output, session) {
     updateTextInput(session, "pe_sens_vec", value = "0.9,0.85,0.8")
     updateTextInput(session, "pe_spec_vec", value = "0.98,0.97,0.96")
     updateNumericInput(session, "pe_n_rep", value = 500)
-    updateSliderInput(session, "pe_range", value = c(0.01, 0.5))
+    updateSliderInput(session, "pe_range", value = c(0.01, 0.99))
+    updateSliderInput(session, "x_range", value = c(0, 1))
+    updateSliderInput(session, "y_range", value = c(0, 1))
+  })
+  
+  # reactiveValues object to store plot data
+  plot_data_store <- reactiveValues(data = list())
+  
+  observeEvent(input$reset_plot, {
+    plot_data_store$data <- list()
   })
   
   
@@ -462,7 +485,9 @@ server <- function(input, output, session) {
     updateTextInput(session, "pe_sens_vec", value = "0.9,0.85,0.8")
     updateTextInput(session, "pe_spec_vec", value = "0.98,0.97,0.96")
     updateNumericInput(session, "pe_n_rep", value = 1000)
-    updateSliderInput(session, "pe_range", value = c(0.01, 0.5))
+    updateSliderInput(session, "pe_range", value = c(0.01, 0.99))
+    updateSliderInput(session, "x_range", value = c(0, 1))
+    updateSliderInput(session, "y_range", value = c(0, 1))
   })
   
   
@@ -524,12 +549,42 @@ server <- function(input, output, session) {
   # })
   # 
   
+  
+  
   observeEvent(input$pe_plot, {
     m_vec <- parse_input(input$pe_m_vec)
     k_vec <- parse_input(input$pe_k_vec)
     sens_vec <- parse_input(input$pe_sens_vec)
     spec_vec <- parse_input(input$pe_spec_vec)
     n_rep <- input$pe_n_rep
+    p_range <- input$pe_range  
+    
+    # Check if inputs match default settings
+    default_match <- identical(m_vec, c(1, 5, 20)) &&
+      identical(k_vec, c(10, 5, 2)) &&
+      identical(sens_vec, c(0.9, 0.85, 0.8)) &&
+      identical(spec_vec, c(0.98, 0.97, 0.96)) &&
+      n_rep == 500 &&
+      isTRUE(all.equal(p_range, c(0.01, 0.99)))
+    
+    # Use cached result if defaults match
+    default_rds_path <- file.path("www", "default_plot_data.rds")
+    # default_rds_path <- "data/default_plot_data.rds"
+    
+    
+    if (default_match && file.exists(default_rds_path)) {
+      cached <- readRDS(default_rds_path)
+      plot_data_store$data[[length(plot_data_store$data) + 1]] <- cached
+      return()
+    }
+    
+    
+    # Create a unique label for the design
+    design_label <- paste0("m=", paste(m_vec, collapse = ","), 
+                           " k=", paste(k_vec, collapse = ","), 
+                           " sens=", paste(sens_vec, collapse = ","), 
+                           " spec=", paste(spec_vec, collapse = ","),
+                           " n_rep=", paste(n_rep, collapse = ","))
     
     if (any(c(length(m_vec), length(k_vec), length(sens_vec), length(spec_vec)) != length(m_vec))) {
       showNotification("All vectors must be of equal length.", type = "error")
@@ -537,42 +592,81 @@ server <- function(input, output, session) {
     }
     
     p_vals <- seq(input$pe_range[1], input$pe_range[2], length.out = 50)
-    
-    est_df <- data.frame(p_true = p_vals, p_hat = NA, sd = NA, lower = NA, upper = NA)
-    
-    for (i in seq_along(p_vals)) {
-      p_true <- p_vals[i]
-      
-      # Replicate MLE estimation n_rep times
-      p_hats <- replicate(n_rep, {
-        y_vec <- simulate_y_sum(p_true, m_vec, k_vec, sens_vec, spec_vec, 1)
-        est <- estimate_p_and_se(m_vec, k_vec, y_vec, sens_vec, spec_vec, 1)
-        est["p_hat"]
-      })
-      
-      p_hats <- p_hats[is.finite(p_hats)]  # exclude NA or non-finite estimates
-      if (length(p_hats) > 0) {
-        est_df$p_hat[i] <- mean(p_hats, na.rm = TRUE)
-        est_df$sd[i] <- sd(p_hats, na.rm = TRUE)
-        est_df$lower[i] <- quantile(p_hats, probs = 0.025, na.rm = TRUE)
-        est_df$upper[i] <- quantile(p_hats, probs = 0.975, na.rm = TRUE)
+    est_df <- data.frame(p_true = p_vals, p_hat = NA, sd = NA, lower = NA, upper = NA, design = design_label)
+    all_p_hats <- data.frame() # Collect all p_hat values across p_true for plotting
+    point_data <- data.frame()  # ← This line was missing before!
+    withProgress(message = "Turning pools into prevalence...", value = 0, {   
+      for (i in seq_along(p_vals)) {
+        p_true <- p_vals[i]
+        
+        # Replicate MLE estimation n_rep times
+        p_hats <- replicate(n_rep, {
+          y_vec <- simulate_y_sum(p_true, m_vec, k_vec, sens_vec, spec_vec, 1)
+          est <- estimate_p_and_se(m_vec, k_vec, y_vec, sens_vec, spec_vec, 1)
+          est["p_hat"]
+        })
+        
+        p_hats <- p_hats[is.finite(p_hats)]  # exclude NA or non-finite estimates
+        all_p_hats <- rbind(all_p_hats, data.frame(p_true = p_true, p_hat = p_hats))
+        
+        if (length(p_hats) > 0) {
+          est_df$p_hat[i] <- mean(p_hats, na.rm = TRUE)
+          # est_df$sd[i] <- sd(p_hats, na.rm = TRUE)
+          est_df$lower[i] <- quantile(p_hats, probs = 0.025, na.rm = TRUE)
+          est_df$upper[i] <- quantile(p_hats, probs = 0.975, na.rm = TRUE)
+          # Store raw p_hat values
+          point_data <- rbind(point_data, data.frame(
+            p_true = rep(p_true, length(p_hats)),
+            p_hat = p_hats,
+            design = design_label
+          ))
+        }
+        # update progress bar
+        incProgress(1 / length(p_vals))
       }
+    })
+    
+    plot_data_store$data[[length(plot_data_store$data) + 1]] <- list(
+      ribbon = est_df,
+      points = point_data
+    )
+    
+    # Optional: save cache for this design if desired
+    if (default_match) {
+      saveRDS(list(ribbon = est_df, points = point_data), file = "www/default_plot_data.rds")
     }
     
-    output$p_hat_plot <- renderPlot({
-      ggplot(est_df, aes(x = p_true, y = p_hat)) +
-        geom_line(color = "#0072B2", size = 1.2) +
-        geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#56B4E9", alpha = 0.3) +
-        geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
-        labs(x = "True Prevalence (p)", y = "Estimated Prevalence (p̂)",
-             title = "Estimated vs True Prevalence (Empirical CI)") +
-        theme_bw(base_size = 16) +
-        coord_cartesian(ylim = c(0, 1)) +
-        theme(
-          axis.text = element_text(size = 14),
-          axis.title = element_text(size = 16)
-        )
-    })
+  })
+  
+  output$p_hat_plot <- renderPlot({
+    if (length(plot_data_store$data) == 0) return(NULL)
+    
+    all_ribbons <- do.call(rbind, lapply(plot_data_store$data, function(x) x$ribbon))
+    all_points <- do.call(rbind, lapply(plot_data_store$data, function(x) x$points))
+    
+    ggplot() +
+      geom_point(data = all_points, aes(x = p_true, y = p_hat, color = design),
+                 alpha = 0.15, shape = 16, position = position_jitter(width = 0.002)) +
+      geom_line(data = all_ribbons, aes(x = p_true, y = p_hat, color = design), linewidth = 1.2) +
+      geom_ribbon(data = all_ribbons, aes(x = p_true, ymin = lower, ymax = upper, fill = design),
+                  alpha = 0.2, color = NA) +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+      labs(x = "True Prevalence (p)", y = "Estimated Prevalence (p̂)",
+           # title = "Simulation Results Across Designs",
+           color = "Design", fill = "Design") +
+      theme_bw(base_size = 16) +
+      guides(color = guide_legend(ncol = 1),  # one column for vertical stacking
+             fill = guide_legend(ncol = 1)) +
+      theme(
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        legend.position = "bottom",
+        legend.box = "vertical"  # stack vertically
+      ) +
+      coord_cartesian(
+        xlim = input$x_range,
+        ylim = input$y_range
+      )
   })
   
   thematic::thematic_shiny()
