@@ -25,46 +25,61 @@ simulate_y_sum <- function(p_true, m_vec, k_vec, sens_vec, spec_vec, n_rep) {
 }
 
 
-log_likelihood_sum <- function(p, m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep) {
-  if (p <= 0 || p >= 1) return(-Inf)
-  # Compute expected positive test probability for each group
-  x_m <- 1 - (1 - p)^m_vec
+log_likelihood_sum <- function(p, m_vec, k_vec, y_vec, sens_vec, spec_vec, n_rep) {
+  if (p < 0 || p > 1) return(-Inf)
+  
+  # 1) pool‐positive probability
+  x_m   <- 1 - (1 - p)^m_vec
   theta <- sens_vec * x_m + (1 - spec_vec) * (1 - x_m)
-  theta <- pmin(pmax(theta, 1e-10), 1 - 1e-10)  # avoid log(0)
-  K_vec <- n_rep * k_vec # Total number of trials per group
-  ll_terms <- y_vec_sum * log(theta) + (K_vec - y_vec_sum) * log(1 - theta)
-  sum(ll_terms)
+  
+  # 2) clamp to avoid exact 0/1
+  theta <- pmin(pmax(theta, 1e-10), 1 - 1e-10)
+  
+  # 3) total trials per group
+  K_vec <- n_rep * k_vec
+  
+  # 4) sum of log‐binomial probabilities
+  sum(dbinom(y_vec, size = K_vec, prob = theta, log = TRUE))
 }
 
 
-estimate_p_and_se <- function(m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep) {
-  # Negative log-likelihood for optimization
-  neg_logL <- function(p) -log_likelihood_sum(p, m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
+
+estimate_p_and_se <- function(m_vec, k_vec, y_vec, sens_vec, spec_vec, n_rep) {
+  # total trials per group
+  K_vec <- n_rep * k_vec
   
-  # Optimize to find MLE
-  opt <- tryCatch({
-    optimize(neg_logL, interval = c(0.0001, 0.9999))
-  }, error = function(e) return(list(minimum = NA, objective = NA)))
+  # 1) Edge‐cases: nothing positive or everything positive
+  if (all(y_vec == 0))      return(c(p_hat = 0, se = NA))
+  if (all(y_vec == K_vec))  return(c(p_hat = 1, se = NA))
   
-  if (is.null(opt$minimum) || is.na(opt$minimum)) return(c(p_hat = NA, se = NA))
-  p_hat <- opt$minimum
+  # 2) Define log‐likelihood
+  logL <- function(p) log_likelihood_sum(p, m_vec, k_vec, y_vec, sens_vec, spec_vec, n_rep)
   
-  # Estimate second derivative of log-likelihood at p_hat
+  # 3) Find interior maximizer on (0,1)
+  opt <- optimize(logL, interval = c(1e-8, 1 - 1e-8), maximum = TRUE)
+  p_int <- opt$maximum
+  ll_int <- opt$objective
+  
+  # 4) Compare to boundaries
+  ll0 <- logL(0)
+  ll1 <- logL(1)
+  best <- which.max(c(ll0, ll1, ll_int))
+  p_hat <- c(0, 1, p_int)[best]
+  
+  # 5) SE via second‐derivative at p_hat
   h <- 1e-5
-  logL_plus <- log_likelihood_sum(p_hat + h, m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
-  logL_minus <- log_likelihood_sum(p_hat - h, m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
-  logL_0 <- log_likelihood_sum(p_hat, m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
+  f0 <- logL(p_hat)
+  f1 <- logL(p_hat + h)
+  f_1 <- logL(p_hat - h)
+  second_deriv <- (f1 + f_1 - 2 * f0) / h^2
   
-  second_deriv <- (logL_plus - 2 * logL_0 + logL_minus) / (h^2)
-  
-  # Standard error: SE = sqrt(1 / observed information)
-  if (second_deriv >= 0 || !is.finite(second_deriv)) {
-    se <- NA  # curvature is non-negative or invalid; can't compute SE
+  se <- if (second_deriv < 0 && is.finite(second_deriv)) {
+    sqrt(-1 / second_deriv)
   } else {
-    se <- sqrt(-1 / second_deriv)
+    NA
   }
   
-  return(c(p_hat = p_hat, se = se))
+  c(p_hat = p_hat, se = se)
 }
 
 
@@ -505,51 +520,6 @@ server <- function(input, output, session) {
     paste("Total Tests Used:", total_tests)
   })
   
-  # observeEvent(input$pe_plot, {
-  #   m_vec <- parse_input(input$pe_m_vec)
-  #   k_vec <- parse_input(input$pe_k_vec)
-  #   sens_vec <- parse_input(input$pe_sens_vec)
-  #   spec_vec <- parse_input(input$pe_spec_vec)
-  #   n_rep <- input$pe_n_rep
-  #   
-  #   if (any(c(length(m_vec), length(k_vec), length(sens_vec), length(spec_vec)) != length(m_vec))) {
-  #     showNotification("All vectors must be of equal length.", type = "error")
-  #     return(NULL)
-  #   }
-  #   
-  #   p_vals <- seq(input$pe_range[1], input$pe_range[2], length.out = 50)
-  #   
-  #   est_df <- data.frame(p_true = p_vals, p_hat = NA, se = NA)
-  #   
-  #   for (i in seq_along(p_vals)) {
-  #     y_vec_sum <- simulate_y_sum(p_vals[i], m_vec, k_vec, sens_vec, spec_vec, n_rep)
-  #     est <- estimate_p_and_se(m_vec, k_vec, y_vec_sum, sens_vec, spec_vec, n_rep)
-  #     est_df$p_hat[i] <- est["p_hat"]
-  #     est_df$se[i] <- est["se"]
-  #   }
-  #   
-  #   est_df$se <- sqrt(n_rep)*est_df$se
-  #   est_df$lower <- pmax(est_df$p_hat - 1.96 * est_df$se, 0)
-  #   est_df$upper <- pmin(est_df$p_hat + 1.96 * est_df$se, 1)
-  #   
-  #   output$p_hat_plot <- renderPlot({
-  #     ggplot(est_df, aes(x = p_true, y = p_hat)) +
-  #       geom_line(color = "#0072B2", size = 1.2) +
-  #       geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#56B4E9", alpha = 0.3) +
-  #       geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
-  #       labs(x = "True Prevalence (p)", y = "Estimated Prevalence (p̂)",
-  #            title = "Estimated vs True Prevalence with 95% CI") +
-  #       theme_bw(base_size = 16) +
-  #       coord_cartesian(ylim = c(0, 1)) +
-  #       theme(
-  #         axis.text = element_text(size = 14),
-  #         axis.title = element_text(size = 16)
-  #       )
-  #   })
-  # })
-  # 
-  
-  
   
   observeEvent(input$pe_plot, {
     m_vec <- parse_input(input$pe_m_vec)
@@ -631,6 +601,7 @@ server <- function(input, output, session) {
       points = point_data
     )
     
+    
     # Optional: save cache for this design if desired
     if (default_match) {
       saveRDS(list(ribbon = est_df, points = point_data), file = "www/default_plot_data.rds")
@@ -646,7 +617,7 @@ server <- function(input, output, session) {
     
     ggplot() +
       geom_point(data = all_points, aes(x = p_true, y = p_hat, color = design),
-                 alpha = 0.15, shape = 16, position = position_jitter(width = 0.002)) +
+                 alpha = 0.15, shape = 16, position = position_jitter(width = 0.001, height = 0.0)) +
       geom_line(data = all_ribbons, aes(x = p_true, y = p_hat, color = design), linewidth = 1.2) +
       geom_ribbon(data = all_ribbons, aes(x = p_true, ymin = lower, ymax = upper, fill = design),
                   alpha = 0.2, color = NA) +
@@ -758,19 +729,6 @@ server <- function(input, output, session) {
     
     sens_range <- seq(input$xy_lim[1] / 100, input$xy_lim[2] / 100, length.out = 100)
     spec_range <- seq(input$xy_lim[1] / 100, input$xy_lim[2] / 100, length.out = 100)
-    
-    # compute_se <- function(p, s, f) {
-    #   sqrt((f + (s - f) * p) * (1 - f - (s - f) * p) / (n * (s - f)^2))
-    # }
-    # 
-    # compute_se_pooled <- function(p, s, f, n, m) {
-    #   q <- (1 - p)^m                          # prob pool has no carriers
-    #   y <- f + (s - f) * (1 - q)              # expected pool positive rate
-    #   dy_dp <- (s - f) * m * (1 - p)^(m - 1)  # derivative dy/dp
-    #   se_y <- sqrt(y * (1 - y) / n)           # SE from binomial(n, y)
-    #   se_p <- se_y / abs(dy_dp)               # delta method SE
-    #   return(se_p)
-    # }
     
     compute_se_pooled_fixed_total <- function(p, s, f, n, m) {
       k <- n / m                                 # number of pools
