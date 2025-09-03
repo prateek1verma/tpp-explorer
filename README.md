@@ -18,6 +18,8 @@ This repository hosts the code and data for the *TPP Explorer*, an R Shiny web a
 - Computes minimum sample sizes for gene drive detection under different sensitivities/specificities.
 - Visualizes false positive and false negative rates for both individual and pooled samples.
 - Explores the standard error in estimating gene drive carrier frequency.
+- Simulates and ranks candidate pooling designs by their precision (standard deviation), accounting for limits on mosquito samples and diagnostic tests.
+- Simulates estimated prevalence across a range of true values to evaluate the performance of a given pooling design.
 
 ## 📖 Background
 
