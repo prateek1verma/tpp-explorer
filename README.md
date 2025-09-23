@@ -10,8 +10,9 @@ This repository hosts the code and data for the *TPP Explorer*, an R Shiny web a
 
 - `Rshinny_tpp_explorer/app.R` — Main R Shiny application script.
 - `Rshinny_tpp_explorer/www/` — Folder containing assets such as logos or styling resources.
-- `Figure1/` — Scripts and plots used to generate panels in Figure 1 of the manuscript.
+- `Figure1/` — Powerpoint figure illustrating the workflow for applying RDTs to sampled mosquitoes for the two use cases.
 - `Figure2/` — Scripts and plots used to generate panels in Figure 2 of the manuscript.
+- `Figure3/` — Scripts and plots used to generate panels in Figure 3 of the manuscript.
 
 ## 🧰 Features
 
