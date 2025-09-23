@@ -1,41 +1,42 @@
-# Figure 2 – Estimating Carrier Frequency
+# Figure 1 – Detection Accuracy and Pooling Effects
 
-This folder contains R scripts used to generate Figure 2 of the gene drive monitoring manuscript. This figure visualizes how test sensitivity and specificity influence the accuracy (standard error) of estimating gene drive carrier frequency.
+This folder contains R scripts used to generate the panels in Figure 1 of the gene drive monitoring manuscript. These figures explore how test sensitivity, specificity, and pooling strategies affect the probability of gene drive detection in mosquito populations.
 
 ## 📊 Panels
 
-- **Figure 2**: Standard error of gene drive carrier frequency estimate under various sensitivity/specificity configurations.
+- **Figure 1A**: Required sample size vs. test sensitivity.
+- **Figure 1B**: Required test specificity for controlling false positives.
+- **Figure 1C**: Pooling effects on sensitivity.
+- **Figure 1D**: Pooling effects on specificity.
 
 ## 🛠️ Files
 
-| File                    | Description                                                                                                                                           |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Fig2_combined.m`       | Main script that generates Figure 2A and 2B showing standard error contours across sensitivity and specificity values for two gene drive frequencies. |
-| `compute_sens_spec.m`   | Helper function used in `Fig2_combined.m` to compute required sensitivity when sensitivity = specificity for a target standard error.                 |
-| `compute_sensitivity.m` | Computes required sensitivity given a fixed specificity to achieve a target standard error.                                                           |
-| `brewermap.m`           | Utility script for generating colorblind-friendly colormaps used in the visualizations.                                                               |
-| `Figure2_Combined.pdf`  | Exported final version of Figure 2 (A and B) as a publication-quality PDF.                                                                            |
-| `Figure2_Combined.png`  | Exported PNG image of the final combined Figure 2 panels for quick preview or web use.                                                                |
-| `README.md`             | Documentation describing the purpose and structure of the `Figure2` folder.                                                                           |
+- `Fig1_combine.R` generates data and combines individual panel plots (1A–1D) into a single multi-panel Figure 1 layout for the manuscript.
+- `Fig1_Combined_MultiPanel.pdf` is the generated Figure in PDF format.
+- `Fig1_Combined_MultiPanel.pdng` is the generated Figure in PNG format.
+
+
+Each script generates a standalone figure using base R or ggplot2.
 
 ## 🧠 Methodology
 
-This script computes and visualizes the standard error of a corrected estimator for gene drive carrier frequency:
+Figures are based on analytic expressions derived in the manuscript, such as:
+
 ```math
-p̂ = (y - f) / (s - f)
+x_{m} = 1 - (1 - x)^{m}
 ```
-where `s` is test sensitivity and `f` is the false positive rate.
+
+```math
+p_{GD} = 1 - (1 - x_{m}s_{m})^{n/m}
+```
+
+```math
+p_{FP} = 1 - (1 - f_{m})^{n/m}
+```
+
+These equations determine the probability of detection and false positives for given sample sizes.
 
 ## 📎 Dependencies
 
-The following MATLAB files and functions are required to generate Figure 2:
-
-- `Fig2_combined.m`: Main script that generates Figure 2A and 2B; depends on the helper functions below.
-- `compute_sens_spec.m`: Computes sensitivity when sensitivity equals specificity for a desired standard error.
-- `compute_sensitivity.m`: Computes required sensitivity given fixed specificity to achieve target precision.
-- `brewermap.m`: Provides ColorBrewer color palettes for consistent and accessible figure styling.
-
-**MATLAB built-ins used**: `fzero`, `meshgrid`, `sqrt`, `imagesc`, `contour`, `plot`, `colorbar`, `exportgraphics`, etc.
-
-No additional MATLAB toolboxes are required beyond the standard distribution.
-
+- `ggplot2`
+- `dplyr`
