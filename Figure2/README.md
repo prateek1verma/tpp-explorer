@@ -1,4 +1,4 @@
-# Figure 1 – Detection Accuracy and Pooling Effects
+# Figure 2 – Detection Accuracy and Pooling Effects
 
 This folder contains R scripts used to generate the panels in Figure 1 of the gene drive monitoring manuscript. These figures explore how test sensitivity, specificity, and pooling strategies affect the probability of gene drive detection in mosquito populations.
 
