@@ -1,22 +1,22 @@
-# Figure 2 – Estimating Carrier Frequency
+# Figure 3 – Estimating Carrier Frequency
 
-This folder contains R scripts used to generate Figure 2 of the gene drive monitoring manuscript. This figure visualizes how test sensitivity and specificity influence the accuracy (standard error) of estimating gene drive carrier frequency.
+This folder contains R scripts used to generate Figure 3 of the gene drive monitoring manuscript. This figure visualizes how test sensitivity and specificity influence the accuracy (standard error) of estimating gene drive carrier frequency.
 
 ## 📊 Panels
 
-- **Figure 2**: Standard error of gene drive carrier frequency estimate under various sensitivity/specificity configurations.
+- **Figure 3**: Standard error of gene drive carrier frequency estimate under various sensitivity/specificity configurations.
 
 ## 🛠️ Files
 
 | File                    | Description                                                                                                                                           |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Fig2_combined.m`       | Main script that generates Figure 2A and 2B showing standard error contours across sensitivity and specificity values for two gene drive frequencies. |
+| `Fig2_combined.m`       | Main script that generates Figure 3A and 3B showing standard error contours across sensitivity and specificity values for two gene drive frequencies. |
 | `compute_sens_spec.m`   | Helper function used in `Fig2_combined.m` to compute required sensitivity when sensitivity = specificity for a target standard error.                 |
 | `compute_sensitivity.m` | Computes required sensitivity given a fixed specificity to achieve a target standard error.                                                           |
 | `brewermap.m`           | Utility script for generating colorblind-friendly colormaps used in the visualizations.                                                               |
-| `Figure2_Combined.pdf`  | Exported final version of Figure 2 (A and B) as a publication-quality PDF.                                                                            |
-| `Figure2_Combined.png`  | Exported PNG image of the final combined Figure 2 panels for quick preview or web use.                                                                |
-| `README.md`             | Documentation describing the purpose and structure of the `Figure2` folder.                                                                           |
+| `Figure3_Combined.pdf`  | Exported final version of Figure 3 (A and B) as a publication-quality PDF.                                                                            |
+| `Figure3_Combined.png`  | Exported PNG image of the final combined Figure 3 panels for quick preview or web use.                                                                |
+| `README.md`             | Documentation describing the purpose and structure of the `Figure3` folder.                                                                           |
 
 ## 🧠 Methodology
 
@@ -28,9 +28,9 @@ where `s` is test sensitivity and `f` is the false positive rate.
 
 ## 📎 Dependencies
 
-The following MATLAB files and functions are required to generate Figure 2:
+The following MATLAB files and functions are required to generate Figure 3:
 
-- `Fig2_combined.m`: Main script that generates Figure 2A and 2B; depends on the helper functions below.
+- `Fig3_combined.m`: Main script that generates Figure 3A and 3B; depends on the helper functions below.
 - `compute_sens_spec.m`: Computes sensitivity when sensitivity equals specificity for a desired standard error.
 - `compute_sensitivity.m`: Computes required sensitivity given fixed specificity to achieve target precision.
 - `brewermap.m`: Provides ColorBrewer color palettes for consistent and accessible figure styling.
