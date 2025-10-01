@@ -25,7 +25,7 @@ This repository hosts the code and data for the *TPP Explorer*, an R Shiny web a
 ## 📖 Background
 
 The methodology and motivation behind this tool are described in our working manuscript:
-> *“Target Product Profiles for Gene Drive Monitoring”*
+> *“A target product profile for a rapid diagnostic test to monitor mosquito gene drive presence and frequency”*
 
 ## 🚀 Getting Started (Local)
 
